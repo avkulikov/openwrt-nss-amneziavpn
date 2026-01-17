@@ -1,0 +1,14 @@
+diff --git a/luci-proto-amneziawg/Makefile b/luci-proto-amneziawg/Makefile
+index 8d2dedf..6331e52 100644
+--- a/luci-proto-amneziawg/Makefile
++++ b/luci-proto-amneziawg/Makefile
+@@ -7,7 +7,8 @@
+ include $(TOPDIR)/rules.mk
+ 
+ PKG_MAINTAINER:=Amnezia Admin <admin@amnezia.org>
+-PKG_VERSION:=0.0.1-1
++PKG_VERSION:=0.0.1
++PKG_RELEASE:=1
+ LUCI_TITLE:=AmneziaWG Web UI
+ LUCI_DESCRIPTION:=Provides Web UI for AmneziaWG
+ LUCI_DEPENDS:=+luci-base +amneziawg-tools +ucode
