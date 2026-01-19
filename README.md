@@ -8,10 +8,11 @@ OpenWrt images for the Xiaomi AX3600 (Qualcommax/IPQ807x) with NSS and AmneziaWG
 - Workflow: `.github/workflows/build.yaml`
 - Trigger: scheduled checks or manual "Run workflow"
 - Release assets:
-  - Firmware images: `openwrt-qualcommax-ipq807x-xiaomi_ax3600-*-factory.bin`
-    and `openwrt-qualcommax-ipq807x-xiaomi_ax3600-*-sysupgrade.bin`
+  - Firmware images:
+    - first install: `openwrt-qualcommax-ipq807x-xiaomi_ax3600-*-factory.ubi`
+    - upgrade: `openwrt-qualcommax-ipq807x-xiaomi_ax3600-*-sysupgrade.bin`
   - AmneziaWG packages: `kmod-amneziawg`, `amneziawg-tools`,
-    `luci-proto-amneziawg` (`*.apk`)
+    `luci-proto-amneziawg` (`*.ipk` or `*.apk`, depending on upstream)
 - Local build output (if you build manually):
   `openwrt/bin/targets/qualcommax/ipq807x/`
 
@@ -19,7 +20,7 @@ OpenWrt images for the Xiaomi AX3600 (Qualcommax/IPQ807x) with NSS and AmneziaWG
 
 ### First install (factory image)
 
-Use the `*-factory.bin` image when flashing from the stock firmware or a
+Use the `*-factory.ubi` image when flashing from the stock firmware or a
 recovery method. If your OEM UI supports firmware upload, select the factory
 image there. If you use a recovery tool (for example TFTP), use the same
 factory image.
@@ -38,9 +39,12 @@ Use the `*-sysupgrade.bin` image when the device already runs OpenWrt.
 ## AmneziaWG
 
 The build includes AmneziaWG packages. If you need to reinstall them from the
-release assets, copy the `.apk` files to the router and install:
+release assets, copy the package files (`.ipk` or `.apk`) to the router and install.
 
-- `apk add /tmp/kmod-amneziawg_*.apk /tmp/amneziawg-tools_*.apk /tmp/luci-proto-amneziawg_*.apk`
+- If you have `.apk` packages (apk-based OpenWrt):
+  - `apk add /tmp/kmod-amneziawg_*.apk /tmp/amneziawg-tools_*.apk /tmp/luci-proto-amneziawg_*.apk`
+- If you have `.ipk` packages (opkg-based OpenWrt):
+  - `opkg install /tmp/kmod-amneziawg_*.ipk /tmp/amneziawg-tools_*.ipk /tmp/luci-proto-amneziawg_*.ipk`
 
 Enable the interface in LuCI:
 

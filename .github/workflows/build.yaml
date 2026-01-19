@@ -3,9 +3,9 @@ name: OpenWrt Build
 on:
   workflow_dispatch:
   push:
-    branches: [master, main]
+    branches: [master]
   schedule:
-    - cron: "0 */2 * * *"
+    - cron: "0 0 * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -62,7 +62,9 @@ jobs:
 
           # Determine if build is required
           build_required=true
+          # Always rebuild on pushes to this repo (builder assets changed)
           if [[ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]] && \
+             [[ "${GITHUB_EVENT_NAME}" != "push" ]] && \
              [[ "$latest_release_body" == *"$main_sha"* ]] && \
              [[ "$latest_release_body" == *"$nss_sha"* ]] && \
              [[ "$latest_release_body" == *"$amnezia_sha"* ]]; then
@@ -238,11 +240,12 @@ jobs:
           - **Main Commit**: \`${{ needs.check_updates.outputs.main_sha }}\`
           - **NSS Commit**: \`${{ needs.check_updates.outputs.nss_sha }}\`
           - **AmneziaWG Commit**: \`${{ needs.check_updates.outputs.amnezia_sha }}\`
+          - **Builder Assets Commit**: \`${{ github.sha }}\`
           - **Trigger**: \`${{ github.event_name }}\`
           EOF
 
-          mapfile -t apk_files < <(find openwrt/bin -type f -name '*.apk' | \
-            grep -E 'amneziawg|luci-proto-amneziawg|kmod-amneziawg' || true)
+          mapfile -t pkg_files < <(find openwrt/bin -type f \\( -name '*.ipk' -o -name '*.apk' \\) | \
+            grep -E '/(kmod-amneziawg|amneziawg-tools|luci-proto-amneziawg).*\\.(ipk|apk)$' || true)
 
           gh release create "$tag_name" \
             --repo "$GITHUB_REPOSITORY" \
@@ -251,10 +254,10 @@ jobs:
             --draft=false \
             $(find openwrt/bin/targets/qualcommax/ipq807x/ -type f -not -path "*/packages/*")
 
-          if [ ${#apk_files[@]} -gt 0 ]; then
-            gh release upload "$tag_name" "${apk_files[@]}"
+          if [ ${#pkg_files[@]} -gt 0 ]; then
+            gh release upload "$tag_name" "${pkg_files[@]}"
           else
-            echo "No AmneziaWG .apk files found to upload."
+            echo "No AmneziaWG .ipk/.apk files found to upload."
           fi
 
           echo "Verifying release..."
