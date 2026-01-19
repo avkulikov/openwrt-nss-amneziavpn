@@ -62,9 +62,7 @@ jobs:
 
           # Determine if build is required
           build_required=true
-          # Always rebuild on pushes to this repo (builder assets changed)
           if [[ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]] && \
-             [[ "${GITHUB_EVENT_NAME}" != "push" ]] && \
              [[ "$latest_release_body" == *"$main_sha"* ]] && \
              [[ "$latest_release_body" == *"$nss_sha"* ]] && \
              [[ "$latest_release_body" == *"$amnezia_sha"* ]]; then
@@ -159,21 +157,30 @@ jobs:
             cp feeds.conf.default feeds.conf
           fi
           echo "src-git qosmio https://github.com/qosmio/packages-extra" >> feeds.conf
-          if ! grep -q '^src-link amneziawg ' feeds.conf; then
-            echo "src-link amneziawg ../amneziawg_feed" >> feeds.conf
-          fi
 
-          # Update and install feeds
-          ./scripts/feeds update qosmio
-          ./scripts/feeds install -a -p qosmio
-          ./scripts/feeds update amneziawg
-          ./scripts/feeds install -a -p amneziawg
+          # Update and install feeds (order matters: ensure indexes exist first)
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+
+          # Vendor AmneziaWG packages into buildroot (apk-based build)
+          rm -rf package/amneziawg
+          mkdir -p package/amneziawg
+          rsync -a --delete \
+            ../amneziawg_feed/kmod-amneziawg \
+            ../amneziawg_feed/amneziawg-tools \
+            ../amneziawg_feed/luci-proto-amneziawg \
+            package/amneziawg/
 
           # Configure
           cp "../builder_repo/${CONFIG_FILE}" .config
           make defconfig
+
+          for pkg in kmod-amneziawg amneziawg-tools luci-proto-amneziawg; do
+            if ! grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
+              echo "ERROR: expected CONFIG_PACKAGE_${pkg}=y after defconfig, but it is missing."
+              exit 1
+            fi
+          done
 
           # Disable bundling custom repos
           sed -i 's/^CONFIG_FEED_luci_extra=.*/# CONFIG_FEED_luci_extra is not set/' .config
@@ -240,12 +247,11 @@ jobs:
           - **Main Commit**: \`${{ needs.check_updates.outputs.main_sha }}\`
           - **NSS Commit**: \`${{ needs.check_updates.outputs.nss_sha }}\`
           - **AmneziaWG Commit**: \`${{ needs.check_updates.outputs.amnezia_sha }}\`
-          - **Builder Assets Commit**: \`${{ github.sha }}\`
           - **Trigger**: \`${{ github.event_name }}\`
           EOF
 
-          mapfile -t pkg_files < <(find openwrt/bin -type f \\( -name '*.ipk' -o -name '*.apk' \\) | \
-            grep -E '/(kmod-amneziawg|amneziawg-tools|luci-proto-amneziawg).*\\.(ipk|apk)$' || true)
+          mapfile -t apk_files < <(find openwrt/bin -type f -name '*.apk' | \
+            grep -E 'amneziawg|luci-proto-amneziawg|kmod-amneziawg' || true)
 
           gh release create "$tag_name" \
             --repo "$GITHUB_REPOSITORY" \
@@ -254,14 +260,15 @@ jobs:
             --draft=false \
             $(find openwrt/bin/targets/qualcommax/ipq807x/ -type f -not -path "*/packages/*")
 
-          if [ ${#pkg_files[@]} -gt 0 ]; then
-            gh release upload "$tag_name" "${pkg_files[@]}"
+          if [ ${#apk_files[@]} -gt 0 ]; then
+            gh release upload "$tag_name" "${apk_files[@]}"
           else
-            echo "No AmneziaWG .ipk/.apk files found to upload."
+            echo "ERROR: No AmneziaWG .apk files found to upload."
+            exit 1
           fi
 
           echo "Verifying release..."
-          gh release view "$tag_name" || echo "WARNING: Release not found immediately after creation!"
+          gh release view --repo "$GITHUB_REPOSITORY" "$tag_name" || echo "WARNING: Release not found immediately after creation!"
 
       - name: Delete older releases
         env:

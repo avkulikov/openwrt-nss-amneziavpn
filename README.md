@@ -12,7 +12,7 @@ OpenWrt images for the Xiaomi AX3600 (Qualcommax/IPQ807x) with NSS and AmneziaWG
     - first install: `openwrt-qualcommax-ipq807x-xiaomi_ax3600-*-factory.ubi`
     - upgrade: `openwrt-qualcommax-ipq807x-xiaomi_ax3600-*-sysupgrade.bin`
   - AmneziaWG packages: `kmod-amneziawg`, `amneziawg-tools`,
-    `luci-proto-amneziawg` (`*.ipk` or `*.apk`, depending on upstream)
+    `luci-proto-amneziawg` (`*.apk`)
 - Local build output (if you build manually):
   `openwrt/bin/targets/qualcommax/ipq807x/`
 
@@ -39,12 +39,9 @@ Use the `*-sysupgrade.bin` image when the device already runs OpenWrt.
 ## AmneziaWG
 
 The build includes AmneziaWG packages. If you need to reinstall them from the
-release assets, copy the package files (`.ipk` or `.apk`) to the router and install.
+release assets, copy the `.apk` files to the router and install:
 
-- If you have `.apk` packages (apk-based OpenWrt):
-  - `apk add /tmp/kmod-amneziawg_*.apk /tmp/amneziawg-tools_*.apk /tmp/luci-proto-amneziawg_*.apk`
-- If you have `.ipk` packages (opkg-based OpenWrt):
-  - `opkg install /tmp/kmod-amneziawg_*.ipk /tmp/amneziawg-tools_*.ipk /tmp/luci-proto-amneziawg_*.ipk`
+- `apk add /tmp/kmod-amneziawg_*.apk /tmp/amneziawg-tools_*.apk /tmp/luci-proto-amneziawg_*.apk`
 
 Enable the interface in LuCI:
 
