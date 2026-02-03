@@ -2,10 +2,10 @@ name: OpenWrt Build
 
 on:
   workflow_dispatch:
-  push:
-    branches: [master]
-  schedule:
-    - cron: "0 0 * * *"
+#  push:
+#    branches: [master]
+#  schedule:
+#    - cron: "0 0 * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
